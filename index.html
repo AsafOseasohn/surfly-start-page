@@ -44,19 +44,20 @@
 
 
 
-    document.getElementById("btnShare").addEventListener("click", async () => {
-      try {
-        if (inSurflySession() && typeof Surfly.currentSession.startScreensharing === "function") {
-          await Surfly.currentSession.startScreensharing(); // Webfuse/Surfly session API pattern :contentReference[oaicite:0]{index=0}
-          setStatus("Screen share started (if your browser prompt was accepted).", "ok");
-          return;
-        }
-        // fallback if API method isn't available in your environment:
-        setStatus("Click '+' in the session tab bar → 'Share your screen'.", "warn"); // Surfly UI flow :contentReference[oaicite:1]{index=1}
-      } catch (e) {
-        setStatus("Screen share failed: " + (e?.message || String(e)), "warn");
-      }
-    });
+document.getElementById("btnShare").addEventListener("click", () => {
+  // 1) Open the Surfly Screen Share app tab
+  if (window.Surfly && Surfly.currentSession) {
+    Surfly.currentSession.openApp("screensharing");
+  }
+
+  // 2) Immediately show browser prompt
+  setTimeout(() => {
+    if (window.Surfly && Surfly.currentSession?.startScreensharing) {
+      Surfly.currentSession.startScreensharing();
+    }
+  }, 300);
+});
+
 
     // small hint for debugging
     setStatus(inSurflySession()
