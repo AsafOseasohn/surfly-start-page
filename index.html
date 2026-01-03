@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ParaBank – Assisted Start</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 40px; }
+    .card { max-width: 520px; padding: 24px; border: 1px solid #ddd; border-radius: 12px; }
+    h1 { font-size: 18px; margin: 0 0 12px; }
+    p { margin: 0 0 16px; color: #333; }
+    button { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #111; cursor: pointer; font-size: 14px; }
+    button + button { margin-top: 10px; }
+    .muted { margin-top: 14px; font-size: 12px; color: #666; }
+    .ok { color: #0a7a2f; }
+    .warn { color: #b45309; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>ParaBank Assisted Signup</h1>
+    <p>Choose how you want to begin:</p>
+
+    <button id="btnSignup">Start signup</button>
+    <button id="btnShare">Start with screen share</button>
+
+    <div id="status" class="muted"></div>
+  </div>
+
+  <script>
+    const PARABANK_REGISTER_URL = "https://parabank.parasoft.com/parabank/register.htm";
+
+    const statusEl = document.getElementById("status");
+    const setStatus = (msg, cls) => {
+      statusEl.className = "muted " + (cls || "");
+      statusEl.textContent = msg;
+    };
+
+    const inSurflySession = () => !!(window.Surfly && window.Surfly.currentSession);
+
+    document.getElementById("btnSignup").addEventListener("click", () => {
+      // simplest + reliable: navigate current tab inside the session
+      window.location.href = PARABANK_REGISTER_URL;
+    });
+
+    document.getElementById("btnShare").addEventListener("click", async () => {
+      try {
+        if (inSurflySession() && typeof Surfly.currentSession.startScreensharing === "function") {
+          await Surfly.currentSession.startScreensharing(); // Webfuse/Surfly session API pattern :contentReference[oaicite:0]{index=0}
+          setStatus("Screen share started (if your browser prompt was accepted).", "ok");
+          return;
+        }
+        // fallback if API method isn't available in your environment:
+        setStatus("Click '+' in the session tab bar → 'Share your screen'.", "warn"); // Surfly UI flow :contentReference[oaicite:1]{index=1}
+      } catch (e) {
+        setStatus("Screen share failed: " + (e?.message || String(e)), "warn");
+      }
+    });
+
+    // small hint for debugging
+    setStatus(inSurflySession()
+      ? "Detected Surfly session context."
+      : "Not in a Surfly session (this is expected if you open the file directly)."
+    );
+  </script>
+</body>
+</html>
