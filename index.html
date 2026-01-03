@@ -45,18 +45,10 @@
 
 
 document.getElementById("btnShare").addEventListener("click", () => {
-  // 1) Open the Surfly Screen Share app tab
-  if (window.Surfly && Surfly.currentSession) {
-    Surfly.currentSession.openApp("screensharing");
-  }
-
-  // 2) Immediately show browser prompt
-  setTimeout(() => {
-    if (window.Surfly && Surfly.currentSession?.startScreensharing) {
-      Surfly.currentSession.startScreensharing();
-    }
-  }, 300);
+  // Open Surfly's built-in screenshare app/tab using a stable in-session route
+  window.location.assign("/screenshare");
 });
+
 
 
     // small hint for debugging
