@@ -39,9 +39,10 @@
     const inSurflySession = () => !!(window.Surfly && window.Surfly.currentSession);
 
     document.getElementById("btnSignup").addEventListener("click", () => {
-      // simplest + reliable: navigate current tab inside the session
-      window.location.href = PARABANK_REGISTER_URL;
-    });
+  // Open ParaBank signup as a new tab in the session; keep this Start Page open
+  window.open(PARABANK_REGISTER_URL, "_blank", "noopener,noreferrer");
+});
+
 
     document.getElementById("btnShare").addEventListener("click", async () => {
       try {
