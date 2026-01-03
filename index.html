@@ -39,9 +39,9 @@
     const inSurflySession = () => !!(window.Surfly && window.Surfly.currentSession);
 
     document.getElementById("btnSignup").addEventListener("click", () => {
-  // Open ParaBank signup as a new tab in the session; keep this Start Page open
-  window.open(PARABANK_REGISTER_URL, "_blank", "noopener,noreferrer");
+  window.location.assign(PARABANK_REGISTER_URL); // same tab redirect
 });
+
 
 
     document.getElementById("btnShare").addEventListener("click", async () => {
