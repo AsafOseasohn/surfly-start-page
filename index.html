@@ -74,8 +74,16 @@
     backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeModal(); });
 
     document.getElementById("btnShare").addEventListener("click", () => {
-  window.postMessage({ type: "WF_START_SCREENSHARE" }, "*");
+  const msg = { type: "WF_START_SCREENSHARE" };
+
+  // Post to the Surfly container frame (where the extension is active)
+  try { window.top.postMessage(msg, "*"); } catch (e) {}
+  try { window.parent.postMessage(msg, "*"); } catch (e) {}
+
+  // Keep local post as well (harmless)
+  try { window.postMessage(msg, "*"); } catch (e) {}
 });
+
 
   </script>
 </body>
