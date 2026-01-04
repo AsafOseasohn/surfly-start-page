@@ -6,210 +6,251 @@
 <title>ParaBank – Assisted Start</title>
 
 <style>
-body {
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  background:#fff;
-  margin:40px;
-}
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 40px; background:#fff; }
 
-.card {
-  max-width:560px;
-  padding:26px;
-  border:1px solid #ddd;
-  border-radius:14px;
-}
+  .card { max-width: 560px; padding: 26px; border: 1px solid #ddd; border-radius: 14px; }
+  h1 { font-size: 18px; margin: 0 0 10px; }
+  p { margin: 0 0 14px; color: #333; line-height: 1.4; }
+  .btn { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #111; cursor: pointer; font-size: 14px; background: #fff; }
+  .btn + .btn { margin-top: 10px; }
+  .helper { margin-top: 10px; font-size: 12px; color: #666; }
+  .badge { display:inline-block; font-size:12px; padding:2px 8px; border:1px solid #ddd; border-radius:999px; margin-left:8px; color:#444; }
 
-h1 { font-size:18px; margin:0 0 10px; }
-p { margin:0 0 14px; color:#333; }
+  /* overlay */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    display: none;
+    z-index: 999999;
+  }
 
-.btn {
-  width:100%;
-  padding:12px;
-  border-radius:10px;
-  border:1px solid #111;
-  background:#fff;
-  cursor:pointer;
-  font-size:14px;
-}
-.btn + .btn { margin-top:10px; }
+  .spotlight {
+    position: absolute;
+    border: 3px solid #3b82f6;
+    border-radius: 10px;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,.45);
+    pointer-events: none;
+  }
 
-.helper {
-  margin-top:10px;
-  font-size:12px;
-  color:#666;
-}
-
-.badge {
-  font-size:12px;
-  padding:2px 8px;
-  border:1px solid #ddd;
-  border-radius:999px;
-  margin-left:6px;
-}
-
-.overlay {
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.45);
-  display:none;
-  z-index:9999;
-}
-
-.spotlight {
-  position:absolute;
-  border:3px solid #3b82f6;
-  border-radius:10px;
-  pointer-events:none;
-}
-
-.pop {
-  position:fixed;
-  background:#fff;
-  border-radius:12px;
-  border:1px solid #ddd;
-  padding:14px;
-  width:320px;
-  z-index:10000;
-}
-
-.pop h2 { margin:0 0 6px; font-size:14px; }
-.pop p { font-size:13px; margin:0 0 10px; }
-
-.actions {
-  display:flex;
-  justify-content:flex-end;
-  gap:8px;
-}
-
-.small {
-  font-size:12px;
-  color:#666;
-  margin-top:8px;
-}
+  .coach {
+    position: absolute;
+    width: min(420px, calc(100vw - 24px));
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #ddd;
+    padding: 14px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.25);
+  }
+  .coach h2 { margin: 0 0 8px; font-size: 15px; }
+  .coach p { margin: 0 0 12px; font-size: 13px; color: #333; }
+  .coach .row { display: flex; gap: 10px; justify-content: flex-end; }
+  .coach button { padding: 10px 12px; border-radius: 10px; border: 1px solid #111; background: #111; color: #fff; cursor: pointer; font-size: 13px; }
+  .coach .ghost { background:#fff; color:#111; border:1px solid #bbb; }
+  .tiny { font-size: 12px; color:#666; margin-top: 8px; }
 </style>
 </head>
 
 <body>
-<div class="card">
-  <h1>ParaBank Assisted Signup <span class="badge">in-session start</span></h1>
-  <p>Choose how you want to begin:</p>
+  <div class="card">
+    <h1>ParaBank Assisted Signup <span class="badge">in-session start</span></h1>
+    <p>Choose how you want to begin:</p>
 
-  <button class="btn" id="startSignup">Start signup</button>
-  <button class="btn" id="startShare">Continue with screen share</button>
+    <button class="btn" id="btnSignup">Start signup</button>
+    <button class="btn" id="btnShare">Continue with screen share</button>
 
-  <div class="helper">We’ll guide you in 2 quick clicks.</div>
-</div>
-
-<div class="overlay" id="overlay">
-  <div class="spotlight" id="spotlight"></div>
-</div>
-
-<div class="pop" id="pop" style="display:none;">
-  <h2 id="stepTitle"></h2>
-  <p id="stepText"></p>
-  <div class="actions">
-    <button id="exit">Exit</button>
-    <button id="next">Next</button>
+    <div class="helper">We’ll guide you in 2 quick clicks.</div>
   </div>
-  <div class="small">You can keep this open while clicking.</div>
-</div>
+
+  <div class="overlay" id="overlay" aria-hidden="true">
+    <div class="spotlight" id="spotlight"></div>
+    <div class="coach" id="coach">
+      <h2 id="coachTitle">Step 1 of 2</h2>
+      <p id="coachText">Click the <b>+</b> button to open the New tab panel.</p>
+      <div class="row">
+        <button class="ghost" id="btnExit" type="button">Exit</button>
+        <button id="btnNext" type="button">Next</button>
+      </div>
+      <div class="tiny" id="coachTip">Tip: Keep this open while you click.</div>
+    </div>
+  </div>
 
 <script>
-const PARABANK_URL = "https://parabank.parasoft.com/parabank/register.htm";
-const overlay = document.getElementById("overlay");
-const spotlight = document.getElementById("spotlight");
-const pop = document.getElementById("pop");
-const stepTitle = document.getElementById("stepTitle");
-const stepText = document.getElementById("stepText");
+  const PARABANK_REGISTER_URL = "https://parabank.parasoft.com/parabank/register.htm";
 
-let step = null;
+  // Persistence keys
+  const K_ACTIVE = "wfGuideActive";   // "1" if user started the guide
+  const K_STEP   = "wfGuideStep";     // "1" or "2"
 
-// ---------- element finders ----------
-function findPlus() {
-  return document.querySelector('.session-icon-button.tab-new');
-}
+  const overlay = document.getElementById("overlay");
+  const spotlight = document.getElementById("spotlight");
+  const coach = document.getElementById("coach");
+  const coachTitle = document.getElementById("coachTitle");
+  const coachText = document.getElementById("coachText");
+  const coachTip = document.getElementById("coachTip");
+  const btnNext = document.getElementById("btnNext");
+  const btnExit = document.getElementById("btnExit");
 
-function findShareVisible() {
-  const el = document.querySelector('[aria-label="Share screen"]');
-  if (!el) return null;
-  const r = el.getBoundingClientRect();
-  if (r.width === 0 || r.height === 0) return null;
-  return el;
-}
+  let step = 0;
+  let pollTimer = null;
 
-// ---------- spotlight ----------
-function highlight(el) {
-  const r = el.getBoundingClientRect();
-  spotlight.style.top = `${r.top - 6}px`;
-  spotlight.style.left = `${r.left - 6}px`;
-  spotlight.style.width = `${r.width + 12}px`;
-  spotlight.style.height = `${r.height + 12}px`;
-}
+  // ---- DOM finders (reactive, no coords) ----
+  function findPlus() {
+    return document.querySelector(".session-icon-button.tab-new");
+  }
 
-// ---------- steps ----------
-function showStep1() {
-  step = 1;
-  sessionStorage.setItem("wfStep", "1");
+  function findShareVisible() {
+    const el = document.querySelector('[aria-label="Share screen"]');
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return null;
+    return el;
+  }
 
-  stepTitle.textContent = "Step 1 of 2";
-  stepText.textContent = "Click the + button to open the New tab panel.";
+  // ---- Overlay positioning that survives transformed ancestors ----
+  // Key trick: translate element rect into overlay’s coordinate space.
+  function highlight(el, padding = 10) {
+    const r = el.getBoundingClientRect();
+    const base = overlay.getBoundingClientRect(); // if overlay is inside a transformed container, base won't be (0,0)
 
-  overlay.style.display = "block";
-  pop.style.display = "block";
+    const left = (r.left - base.left) - padding;
+    const top  = (r.top  - base.top)  - padding;
 
-  const poll = setInterval(() => {
-    const plus = findPlus();
-    if (plus) {
-      highlight(plus);
-      clearInterval(poll);
+    spotlight.style.left = Math.max(8, left) + "px";
+    spotlight.style.top  = Math.max(8, top) + "px";
+    spotlight.style.width  = Math.max(20, r.width + padding * 2) + "px";
+    spotlight.style.height = Math.max(20, r.height + padding * 2) + "px";
+  }
+
+  function placeCoachNear(el) {
+    const r = el.getBoundingClientRect();
+    const base = overlay.getBoundingClientRect();
+
+    // Place coach below the target, clamped into viewport of overlay container
+    const desiredLeft = (r.left - base.left);
+    const desiredTop  = (r.bottom - base.top) + 12;
+
+    const maxLeft = overlay.clientWidth - 440;
+    const maxTop  = overlay.clientHeight - 170;
+
+    coach.style.left = Math.min(maxLeft, Math.max(12, desiredLeft)) + "px";
+    coach.style.top  = Math.min(maxTop,  Math.max(12, desiredTop)) + "px";
+  }
+
+  function showOverlay() {
+    overlay.style.display = "block";
+    overlay.setAttribute("aria-hidden", "false");
+  }
+
+  function hideOverlay() {
+    overlay.style.display = "none";
+    overlay.setAttribute("aria-hidden", "true");
+  }
+
+  function stopPolling() {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = null;
+  }
+
+  function startPolling(fn) {
+    stopPolling();
+    pollTimer = setInterval(fn, 200);
+  }
+
+  // ---- Steps ----
+  function renderStep1() {
+    step = 1;
+    sessionStorage.setItem(K_STEP, "1");
+
+    coachTitle.textContent = "Step 1 of 2";
+    coachText.innerHTML = 'Click the <b>+</b> button to open the New tab panel.';
+    coachTip.textContent = "Tip: Keep this open while you click.";
+    btnNext.textContent = "Next";
+
+    showOverlay();
+
+    startPolling(() => {
+      const plus = findPlus();
+      if (plus) {
+        highlight(plus, 12);
+        placeCoachNear(plus);
+      }
+    });
+  }
+
+  function renderStep2() {
+    step = 2;
+    sessionStorage.setItem(K_STEP, "2");
+
+    coachTitle.textContent = "Step 2 of 2";
+    coachText.innerHTML = 'In the New tab panel, click <b>Share screen</b> next to the URL field.';
+    coachTip.textContent = "If you don’t see it yet, click + first.";
+    btnNext.textContent = "Done";
+
+    showOverlay();
+
+    startPolling(() => {
+      const share = findShareVisible();
+      if (share) {
+        highlight(share, 14);
+        placeCoachNear(share);
+      } else {
+        // If share isn't visible yet, keep nudging toward +
+        const plus = findPlus();
+        if (plus) {
+          highlight(plus, 12);
+          placeCoachNear(plus);
+        }
+      }
+    });
+  }
+
+  function endGuide() {
+    stopPolling();
+    step = 0;
+    sessionStorage.removeItem(K_ACTIVE);
+    sessionStorage.removeItem(K_STEP);
+    hideOverlay();
+    spotlight.style.width = "0";
+    spotlight.style.height = "0";
+  }
+
+  // ---- Button wiring ----
+  document.getElementById("btnSignup").addEventListener("click", () => {
+    window.location.assign(PARABANK_REGISTER_URL);
+  });
+
+  document.getElementById("btnShare").addEventListener("click", () => {
+    // Only persist if user explicitly starts it
+    sessionStorage.setItem(K_ACTIVE, "1");
+    renderStep1();
+  });
+
+  btnExit.addEventListener("click", endGuide);
+
+  btnNext.addEventListener("click", () => {
+    if (step === 1) renderStep2();
+    else endGuide();
+  });
+
+  // ---- Persistence across tabs ----
+  // Only resume if user explicitly started the guide in THIS browser session.
+  (function maybeResume() {
+    const active = sessionStorage.getItem(K_ACTIVE);
+    const savedStep = sessionStorage.getItem(K_STEP);
+
+    if (active !== "1") return; // prevents auto-start on fresh sessions
+    if (savedStep === "1") renderStep1();
+    if (savedStep === "2") renderStep2();
+  })();
+
+  // Keep aligned on resize
+  window.addEventListener("resize", () => {
+    if (overlay.style.display === "block") {
+      if (step === 1) renderStep1();
+      if (step === 2) renderStep2();
     }
-  }, 200);
-}
-
-function showStep2() {
-  step = 2;
-  sessionStorage.setItem("wfStep", "2");
-
-  stepTitle.textContent = "Step 2 of 2";
-  stepText.textContent = "In the New tab panel, click Screen share next to the URL field.";
-
-  const poll = setInterval(() => {
-    const share = findShareVisible();
-    if (share) {
-      highlight(share);
-      clearInterval(poll);
-    }
-  }, 200);
-}
-
-// ---------- controls ----------
-document.getElementById("startSignup").onclick = () => {
-  window.location.assign(PARABANK_URL);
-};
-
-document.getElementById("startShare").onclick = () => {
-  sessionStorage.setItem("wfStep", "1");
-  showStep1();
-};
-
-document.getElementById("next").onclick = () => {
-  if (step === 1) showStep2();
-  else closeFlow();
-};
-
-document.getElementById("exit").onclick = closeFlow;
-
-function closeFlow() {
-  overlay.style.display = "none";
-  pop.style.display = "none";
-  spotlight.style.width = "0";
-  sessionStorage.removeItem("wfStep");
-}
-
-// ---------- restore ----------
-const saved = sessionStorage.getItem("wfStep");
-if (saved === "1") showStep1();
-if (saved === "2") showStep2();
+  });
 </script>
 </body>
 </html>
