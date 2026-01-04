@@ -1,252 +1,215 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ParaBank – Assisted Start</title>
-  <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 40px; background:#fff; }
-    .card { max-width: 560px; padding: 26px; border: 1px solid #ddd; border-radius: 14px; }
-    h1 { font-size: 18px; margin: 0 0 10px; }
-    p { margin: 0 0 14px; color: #333; line-height: 1.4; }
-    .btn { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #111; cursor: pointer; font-size: 14px; background: #fff; }
-    .btn + .btn { margin-top: 10px; }
-    .helper { margin-top: 10px; font-size: 12px; color: #666; }
-    .badge { display:inline-block; font-size:12px; padding:2px 8px; border:1px solid #ddd; border-radius:999px; margin-left:8px; color:#444; }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ParaBank – Assisted Start</title>
 
-    /* Guidance overlay */
-    .overlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,.45);
-      display: none;
-      z-index: 999999;
-    }
-    .spotlight {
-      position: absolute;
-      border: 2px solid #fff;
-      border-radius: 10px;
-      box-shadow: 0 0 0 9999px rgba(0,0,0,.45);
-      background: transparent;
-      pointer-events: none;
-    }
-    .coach {
-      position: absolute;
-      width: min(420px, calc(100vw - 24px));
-      background: #fff;
-      border-radius: 14px;
-      border: 1px solid #ddd;
-      padding: 14px;
-      box-shadow: 0 12px 40px rgba(0,0,0,.25);
-    }
-    .coach h2 { margin: 0 0 8px; font-size: 15px; }
-    .coach p { margin: 0 0 12px; font-size: 13px; color: #333; }
-    .coach .row { display: flex; gap: 10px; justify-content: flex-end; }
-    .coach button { padding: 10px 12px; border-radius: 10px; border: 1px solid #111; background: #111; color: #fff; cursor: pointer; font-size: 13px; }
-    .coach .ghost { background:#fff; color:#111; border:1px solid #bbb; }
-    .tiny { font-size: 12px; color:#666; margin-top: 8px; }
-  </style>
+<style>
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background:#fff;
+  margin:40px;
+}
+
+.card {
+  max-width:560px;
+  padding:26px;
+  border:1px solid #ddd;
+  border-radius:14px;
+}
+
+h1 { font-size:18px; margin:0 0 10px; }
+p { margin:0 0 14px; color:#333; }
+
+.btn {
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #111;
+  background:#fff;
+  cursor:pointer;
+  font-size:14px;
+}
+.btn + .btn { margin-top:10px; }
+
+.helper {
+  margin-top:10px;
+  font-size:12px;
+  color:#666;
+}
+
+.badge {
+  font-size:12px;
+  padding:2px 8px;
+  border:1px solid #ddd;
+  border-radius:999px;
+  margin-left:6px;
+}
+
+.overlay {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  display:none;
+  z-index:9999;
+}
+
+.spotlight {
+  position:absolute;
+  border:3px solid #3b82f6;
+  border-radius:10px;
+  pointer-events:none;
+}
+
+.pop {
+  position:fixed;
+  background:#fff;
+  border-radius:12px;
+  border:1px solid #ddd;
+  padding:14px;
+  width:320px;
+  z-index:10000;
+}
+
+.pop h2 { margin:0 0 6px; font-size:14px; }
+.pop p { font-size:13px; margin:0 0 10px; }
+
+.actions {
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+}
+
+.small {
+  font-size:12px;
+  color:#666;
+  margin-top:8px;
+}
+</style>
 </head>
+
 <body>
-  <div class="card">
-    <h1>ParaBank Assisted Signup <span class="badge">in-session start</span></h1>
-    <p>Choose how you want to begin:</p>
+<div class="card">
+  <h1>ParaBank Assisted Signup <span class="badge">in-session start</span></h1>
+  <p>Choose how you want to begin:</p>
 
-    <button class="btn" id="btnSignup">Start signup</button>
+  <button class="btn" id="startSignup">Start signup</button>
+  <button class="btn" id="startShare">Continue with screen share</button>
 
-    <button class="btn" id="btnShare">Continue with screen share</button>
-    <div class="helper">We’ll guide you in 2 quick clicks.</div>
+  <div class="helper">We’ll guide you in 2 quick clicks.</div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="spotlight" id="spotlight"></div>
+</div>
+
+<div class="pop" id="pop" style="display:none;">
+  <h2 id="stepTitle"></h2>
+  <p id="stepText"></p>
+  <div class="actions">
+    <button id="exit">Exit</button>
+    <button id="next">Next</button>
   </div>
+  <div class="small">You can keep this open while clicking.</div>
+</div>
 
-  <div class="overlay" id="overlay" aria-hidden="true">
-    <div class="spotlight" id="spotlight"></div>
-    <div class="coach" id="coach">
-      <h2 id="coachTitle">Step 1 of 2</h2>
-      <p id="coachText">Click the <b>+</b> button to open a New tab.</p>
-      <div class="row">
-        <button class="ghost" id="btnExit" type="button">Exit</button>
-        <button id="btnNext" type="button">Next</button>
-      </div>
-      <div class="tiny" id="coachTip">Tip: Keep this open while you click.</div>
-    </div>
-  </div>
+<script>
+const PARABANK_URL = "https://parabank.parasoft.com/parabank/register.htm";
+const overlay = document.getElementById("overlay");
+const spotlight = document.getElementById("spotlight");
+const pop = document.getElementById("pop");
+const stepTitle = document.getElementById("stepTitle");
+const stepText = document.getElementById("stepText");
 
-  <script>
-    const PARABANK_REGISTER_URL = "https://parabank.parasoft.com/parabank/register.htm";
+let step = null;
 
-    // Persistence key across tabs/pages in the same browser profile
-    const LS_KEY = "wf_guided_screenshare_step"; // "0" | "1" | "2"
+// ---------- element finders ----------
+function findPlus() {
+  return document.querySelector('.session-icon-button.tab-new');
+}
 
-    document.getElementById("btnSignup").addEventListener("click", () => {
-      window.location.assign(PARABANK_REGISTER_URL);
-    });
+function findShareVisible() {
+  const el = document.querySelector('[aria-label="Share screen"]');
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  if (r.width === 0 || r.height === 0) return null;
+  return el;
+}
 
-    // Overlay nodes
-    const overlay = document.getElementById("overlay");
-    const spotlight = document.getElementById("spotlight");
-    const coach = document.getElementById("coach");
-    const coachTitle = document.getElementById("coachTitle");
-    const coachText = document.getElementById("coachText");
-    const coachTip = document.getElementById("coachTip");
-    const btnNext = document.getElementById("btnNext");
-    const btnExit = document.getElementById("btnExit");
+// ---------- spotlight ----------
+function highlight(el) {
+  const r = el.getBoundingClientRect();
+  spotlight.style.top = `${r.top - 6}px`;
+  spotlight.style.left = `${r.left - 6}px`;
+  spotlight.style.width = `${r.width + 12}px`;
+  spotlight.style.height = `${r.height + 12}px`;
+}
 
-    let step = 0;
+// ---------- steps ----------
+function showStep1() {
+  step = 1;
+  sessionStorage.setItem("wfStep", "1");
 
-    function showOverlay() {
-      overlay.style.display = "block";
-      overlay.setAttribute("aria-hidden", "false");
+  stepTitle.textContent = "Step 1 of 2";
+  stepText.textContent = "Click the + button to open the New tab panel.";
+
+  overlay.style.display = "block";
+  pop.style.display = "block";
+
+  const poll = setInterval(() => {
+    const plus = findPlus();
+    if (plus) {
+      highlight(plus);
+      clearInterval(poll);
     }
-    function hideOverlay() {
-      overlay.style.display = "none";
-      overlay.setAttribute("aria-hidden", "true");
+  }, 200);
+}
+
+function showStep2() {
+  step = 2;
+  sessionStorage.setItem("wfStep", "2");
+
+  stepTitle.textContent = "Step 2 of 2";
+  stepText.textContent = "In the New tab panel, click Screen share next to the URL field.";
+
+  const poll = setInterval(() => {
+    const share = findShareVisible();
+    if (share) {
+      highlight(share);
+      clearInterval(poll);
     }
+  }, 200);
+}
 
-    // ---- Accurate element targeting (your selectors) ----
-    function findNewTabButton() {
-      // You confirmed this exists in the start page DOM
-      return document.querySelector(".session-icon-button.tab-new");
-    }
+// ---------- controls ----------
+document.getElementById("startSignup").onclick = () => {
+  window.location.assign(PARABANK_URL);
+};
 
-    function findShareButton() {
-      // You confirmed this exists when the New tab panel is open
-      return document.querySelector('[aria-label="Share screen"]');
-    }
+document.getElementById("startShare").onclick = () => {
+  sessionStorage.setItem("wfStep", "1");
+  showStep1();
+};
 
-    function spotlightOn(el, padding = 12) {
-      const r = el.getBoundingClientRect();
-      spotlight.style.left = Math.max(10, r.left - padding) + "px";
-      spotlight.style.top = Math.max(10, r.top - padding) + "px";
-      spotlight.style.width = Math.min(window.innerWidth - 20, r.width + padding * 2) + "px";
-      spotlight.style.height = Math.min(window.innerHeight - 20, r.height + padding * 2) + "px";
-    }
+document.getElementById("next").onclick = () => {
+  if (step === 1) showStep2();
+  else closeFlow();
+};
 
-    function placeCoachNear(el) {
-      const r = el.getBoundingClientRect();
-      // Prefer below-right; clamp into viewport
-      const left = Math.min(window.innerWidth - 440, Math.max(12, r.left));
-      const top  = Math.min(window.innerHeight - 170, r.bottom + 12);
-      coach.style.left = left + "px";
-      coach.style.top = top + "px";
-    }
+document.getElementById("exit").onclick = closeFlow;
 
-    // ---- Step rendering ----
-    function setStep1UI() {
-      coachTitle.textContent = "Step 1 of 2";
-      coachText.innerHTML = 'Click the <b>+</b> button to open a New tab.';
-      coachTip.textContent = "Tip: Keep this open while you click.";
-      btnNext.textContent = "Next";
+function closeFlow() {
+  overlay.style.display = "none";
+  pop.style.display = "none";
+  spotlight.style.width = "0";
+  sessionStorage.removeItem("wfStep");
+}
 
-      const plus = findNewTabButton();
-      if (plus) {
-        spotlightOn(plus, 12);
-        placeCoachNear(plus);
-      } else {
-        // Fallback if DOM changes
-        spotlight.style.left = "10px";
-        spotlight.style.top = "10px";
-        spotlight.style.width = "360px";
-        spotlight.style.height = "70px";
-        coach.style.left = "12px";
-        coach.style.top = "96px";
-      }
-    }
-
-    function setStep2UI() {
-      coachTitle.textContent = "Step 2 of 2";
-      coachText.innerHTML = 'In the New tab panel, click <b>Share screen</b> (next to the URL field).';
-      coachTip.textContent = "Tip: If you don’t see it, click + first.";
-      btnNext.textContent = "Done";
-
-      const share = findShareButton();
-      if (share) {
-        spotlightOn(share, 14);
-        placeCoachNear(share);
-      } else {
-        // If the New tab panel isn't open yet, keep the overlay visible but don’t lie with a highlight.
-        // Highlight the + again as a gentle nudge.
-        const plus = findNewTabButton();
-        if (plus) {
-          spotlightOn(plus, 12);
-          placeCoachNear(plus);
-        }
-      }
-    }
-
-    function render() {
-      showOverlay();
-      if (step === 1) setStep1UI();
-      if (step === 2) setStep2UI();
-    }
-
-    // ---- Flow controls ----
-    function startGuide() {
-      step = 1;
-      localStorage.setItem(LS_KEY, "1");
-      render();
-    }
-
-    function endGuide() {
-      step = 0;
-      localStorage.setItem(LS_KEY, "0");
-      hideOverlay();
-    }
-
-    document.getElementById("btnShare").addEventListener("click", startGuide);
-    btnExit.addEventListener("click", endGuide);
-
-    btnNext.addEventListener("click", () => {
-      if (step === 1) {
-        step = 2;
-        localStorage.setItem(LS_KEY, "2");
-        render();
-
-        // Poll briefly so Step 2 snaps to the Share button as soon as it exists
-        let tries = 0;
-        const t = setInterval(() => {
-          tries++;
-          if (step !== 2) return clearInterval(t);
-          const share = findShareButton();
-          if (share) {
-            setStep2UI();
-            clearInterval(t);
-          }
-          if (tries > 30) clearInterval(t); // ~7.5s
-        }, 250);
-      } else {
-        endGuide();
-      }
-    });
-
-    // ---- Persistence across tabs/pages ----
-    // If the user opens the New tab panel (or switches tab) and this page reloads,
-    // we resume the last step.
-    function maybeResume() {
-      const s = localStorage.getItem(LS_KEY) || "0";
-      if (s === "1") { step = 1; render(); }
-      if (s === "2") {
-        step = 2;
-        render();
-        // Poll until Share button exists, then snap highlight
-        let tries = 0;
-        const t = setInterval(() => {
-          tries++;
-          if (step !== 2) return clearInterval(t);
-          const share = findShareButton();
-          if (share) {
-            setStep2UI();
-            clearInterval(t);
-          }
-          if (tries > 40) clearInterval(t); // ~10s
-        }, 250);
-      }
-    }
-
-    // Keep highlight accurate if viewport changes
-    window.addEventListener("resize", () => {
-      if (overlay.style.display === "block") render();
-    });
-
-    maybeResume();
-  </script>
+// ---------- restore ----------
+const saved = sessionStorage.getItem("wfStep");
+if (saved === "1") showStep1();
+if (saved === "2") showStep2();
+</script>
 </body>
 </html>
