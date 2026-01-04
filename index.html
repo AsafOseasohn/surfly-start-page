@@ -54,118 +54,199 @@
     <button class="btn" id="btnSignup">Start signup</button>
 
     <button class="btn" id="btnShare">Continue with screen share</button>
-    <div class="helper">
-      We’ll guide you in 2 quick clicks.
-    </div>
+    <div class="helper">We’ll guide you in 2 quick clicks.</div>
   </div>
 
-  <!-- Overlay guidance (approximate positions) -->
   <div class="overlay" id="overlay" aria-hidden="true">
     <div class="spotlight" id="spotlight"></div>
     <div class="coach" id="coach">
       <h2 id="coachTitle">Step 1 of 2</h2>
-      <p id="coachText">Click the <b>+</b> button to open the “New tab” panel.</p>
+      <p id="coachText">Click the <b>+</b> button to open a New tab.</p>
       <div class="row">
         <button class="ghost" id="btnExit" type="button">Exit</button>
         <button id="btnNext" type="button">Next</button>
       </div>
-      <div class="tiny">Tip: You can keep this open while you click.</div>
+      <div class="tiny" id="coachTip">Tip: Keep this open while you click.</div>
     </div>
   </div>
 
   <script>
     const PARABANK_REGISTER_URL = "https://parabank.parasoft.com/parabank/register.htm";
 
-    // --- basic navigation ---
+    // Persistence key across tabs/pages in the same browser profile
+    const LS_KEY = "wf_guided_screenshare_step"; // "0" | "1" | "2"
+
     document.getElementById("btnSignup").addEventListener("click", () => {
       window.location.assign(PARABANK_REGISTER_URL);
     });
 
-    // --- guidance overlay logic ---
+    // Overlay nodes
     const overlay = document.getElementById("overlay");
     const spotlight = document.getElementById("spotlight");
     const coach = document.getElementById("coach");
     const coachTitle = document.getElementById("coachTitle");
     const coachText = document.getElementById("coachText");
+    const coachTip = document.getElementById("coachTip");
     const btnNext = document.getElementById("btnNext");
     const btnExit = document.getElementById("btnExit");
 
-    let step = 1;
+    let step = 0;
 
-    // These are “best effort” highlight positions because Surfly UI isn’t reliably selectable from this page.
-    // We highlight where the controls usually are:
-    // Step 1: the + area near the tabs (top-left)
-    // Step 2: the action buttons on the right side of the URL row (middle-left)
-    function setSpotlightForStep(s) {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-
-      if (s === 1) {
-        // highlight top-left tab bar area (where + lives)
-        const x = 12;
-        const y = 10;
-        const sw = Math.min(260, w - 24);
-        const sh = 60;
-        spotlight.style.left = x + "px";
-        spotlight.style.top = y + "px";
-        spotlight.style.width = sw + "px";
-        spotlight.style.height = sh + "px";
-
-        coachTitle.textContent = "Step 1 of 2";
-        coachText.innerHTML = "Click the <b>+</b> button to open the “New tab” panel.";
-        // place coach slightly below
-        coach.style.left = "12px";
-        coach.style.top = (y + sh + 12) + "px";
-        btnNext.textContent = "Next";
-      } else {
-        // highlight mid-left area where the URL bar row appears in the New tab panel
-        const x = 18;
-        const y = Math.round(h * 0.45);
-        const sw = Math.min(520, w - 36);
-        const sh = 70;
-        spotlight.style.left = x + "px";
-        spotlight.style.top = y + "px";
-        spotlight.style.width = sw + "px";
-        spotlight.style.height = sh + "px";
-
-        coachTitle.textContent = "Step 2 of 2";
-        coachText.innerHTML = "In the “New tab” panel, click the <b>Screen share</b> action next to the URL field.";
-        coach.style.left = "12px";
-        coach.style.top = Math.min(h - 180, y + sh + 12) + "px";
-        btnNext.textContent = "Done";
-      }
-    }
-
-    function openGuide() {
-      step = 1;
+    function showOverlay() {
       overlay.style.display = "block";
       overlay.setAttribute("aria-hidden", "false");
-      setSpotlightForStep(step);
     }
-
-    function closeGuide() {
+    function hideOverlay() {
       overlay.style.display = "none";
       overlay.setAttribute("aria-hidden", "true");
     }
 
-    document.getElementById("btnShare").addEventListener("click", () => {
-      openGuide();
-    });
+    // ---- Accurate element targeting (your selectors) ----
+    function findNewTabButton() {
+      // You confirmed this exists in the start page DOM
+      return document.querySelector(".session-icon-button.tab-new");
+    }
 
-    btnExit.addEventListener("click", closeGuide);
+    function findShareButton() {
+      // You confirmed this exists when the New tab panel is open
+      return document.querySelector('[aria-label="Share screen"]');
+    }
+
+    function spotlightOn(el, padding = 12) {
+      const r = el.getBoundingClientRect();
+      spotlight.style.left = Math.max(10, r.left - padding) + "px";
+      spotlight.style.top = Math.max(10, r.top - padding) + "px";
+      spotlight.style.width = Math.min(window.innerWidth - 20, r.width + padding * 2) + "px";
+      spotlight.style.height = Math.min(window.innerHeight - 20, r.height + padding * 2) + "px";
+    }
+
+    function placeCoachNear(el) {
+      const r = el.getBoundingClientRect();
+      // Prefer below-right; clamp into viewport
+      const left = Math.min(window.innerWidth - 440, Math.max(12, r.left));
+      const top  = Math.min(window.innerHeight - 170, r.bottom + 12);
+      coach.style.left = left + "px";
+      coach.style.top = top + "px";
+    }
+
+    // ---- Step rendering ----
+    function setStep1UI() {
+      coachTitle.textContent = "Step 1 of 2";
+      coachText.innerHTML = 'Click the <b>+</b> button to open a New tab.';
+      coachTip.textContent = "Tip: Keep this open while you click.";
+      btnNext.textContent = "Next";
+
+      const plus = findNewTabButton();
+      if (plus) {
+        spotlightOn(plus, 12);
+        placeCoachNear(plus);
+      } else {
+        // Fallback if DOM changes
+        spotlight.style.left = "10px";
+        spotlight.style.top = "10px";
+        spotlight.style.width = "360px";
+        spotlight.style.height = "70px";
+        coach.style.left = "12px";
+        coach.style.top = "96px";
+      }
+    }
+
+    function setStep2UI() {
+      coachTitle.textContent = "Step 2 of 2";
+      coachText.innerHTML = 'In the New tab panel, click <b>Share screen</b> (next to the URL field).';
+      coachTip.textContent = "Tip: If you don’t see it, click + first.";
+      btnNext.textContent = "Done";
+
+      const share = findShareButton();
+      if (share) {
+        spotlightOn(share, 14);
+        placeCoachNear(share);
+      } else {
+        // If the New tab panel isn't open yet, keep the overlay visible but don’t lie with a highlight.
+        // Highlight the + again as a gentle nudge.
+        const plus = findNewTabButton();
+        if (plus) {
+          spotlightOn(plus, 12);
+          placeCoachNear(plus);
+        }
+      }
+    }
+
+    function render() {
+      showOverlay();
+      if (step === 1) setStep1UI();
+      if (step === 2) setStep2UI();
+    }
+
+    // ---- Flow controls ----
+    function startGuide() {
+      step = 1;
+      localStorage.setItem(LS_KEY, "1");
+      render();
+    }
+
+    function endGuide() {
+      step = 0;
+      localStorage.setItem(LS_KEY, "0");
+      hideOverlay();
+    }
+
+    document.getElementById("btnShare").addEventListener("click", startGuide);
+    btnExit.addEventListener("click", endGuide);
 
     btnNext.addEventListener("click", () => {
       if (step === 1) {
         step = 2;
-        setSpotlightForStep(step);
+        localStorage.setItem(LS_KEY, "2");
+        render();
+
+        // Poll briefly so Step 2 snaps to the Share button as soon as it exists
+        let tries = 0;
+        const t = setInterval(() => {
+          tries++;
+          if (step !== 2) return clearInterval(t);
+          const share = findShareButton();
+          if (share) {
+            setStep2UI();
+            clearInterval(t);
+          }
+          if (tries > 30) clearInterval(t); // ~7.5s
+        }, 250);
       } else {
-        closeGuide();
+        endGuide();
       }
     });
 
+    // ---- Persistence across tabs/pages ----
+    // If the user opens the New tab panel (or switches tab) and this page reloads,
+    // we resume the last step.
+    function maybeResume() {
+      const s = localStorage.getItem(LS_KEY) || "0";
+      if (s === "1") { step = 1; render(); }
+      if (s === "2") {
+        step = 2;
+        render();
+        // Poll until Share button exists, then snap highlight
+        let tries = 0;
+        const t = setInterval(() => {
+          tries++;
+          if (step !== 2) return clearInterval(t);
+          const share = findShareButton();
+          if (share) {
+            setStep2UI();
+            clearInterval(t);
+          }
+          if (tries > 40) clearInterval(t); // ~10s
+        }, 250);
+      }
+    }
+
+    // Keep highlight accurate if viewport changes
     window.addEventListener("resize", () => {
-      if (overlay.style.display === "block") setSpotlightForStep(step);
+      if (overlay.style.display === "block") render();
     });
+
+    maybeResume();
   </script>
 </body>
 </html>
