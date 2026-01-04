@@ -73,22 +73,10 @@
     document.getElementById("btnClose").addEventListener("click", closeModal);
     backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeModal(); });
 
-    document.getElementById("btnShare").addEventListener("click", async () => {
-      // If a Webfuse extension injects the session API, trigger screenshare (best UX).
-      // Otherwise, show the clean “one-click in toolbar” instructions (still day-1 deployable).
-      try {
-        const wf = (window.browser && window.browser.webfuseSession) ? window.browser.webfuseSession
-                 : (window.webfuseSession ? window.webfuseSession : null);
+    document.getElementById("btnShare").addEventListener("click", () => {
+  window.postMessage({ type: "WF_START_SCREENSHARE" }, "*");
+});
 
-        if (wf && typeof wf.startScreensharing === "function") {
-          await wf.startScreensharing();
-          // You’ll still get the browser prompt; success depends on user consent.
-          return;
-        }
-      } catch (_) { /* fall through */ }
-
-      openModal();
-    });
   </script>
 </body>
 </html>
