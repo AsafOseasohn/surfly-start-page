@@ -32,8 +32,8 @@
     <button class="btn" id="btnSignup">Start signup</button>
 
     <button class="btn" id="btnShare">Continue with screen share</button>
-    <div class="helper" id="shareHelper">
-      You’ll be guided to start screen share in the next step.
+    <div class="helper" id="shareHelperTop">
+      Next: click <b>+</b>, then the <b>screen share</b> icon next to the URL field.
     </div>
   </div>
 
@@ -45,13 +45,14 @@
         <li>In the URL box row, click the <b>screen share</b> icon (looks like a Wi-Fi / broadcast symbol).</li>
         <li>Select the window or screen you want to share, then click <b>Share</b>.</li>
       </ol>
-      
-      <div class="helper" id="shareHelper">
-        Next: click <b>+</b>, then the <b>screen share</b> icon next to the URL field.
+
+      <div class="row">
+        <button class="btnSecondary" id="btnClose" type="button">Close</button>
+        <button class="btnPrimary" id="btnGoToSignup" type="button">Go to signup</button>
       </div>
-      
+
       <div class="small">
-        If screen share is enabled via Webfuse extension, this button can trigger the browser prompt automatically.
+        Note: Screen sharing must be initiated via the in-session UI for user consent.
       </div>
     </div>
   </div>
@@ -60,8 +61,8 @@
     const PARABANK_REGISTER_URL = "https://parabank.parasoft.com/parabank/register.htm";
 
     const backdrop = document.getElementById("backdrop");
-    const openModal = () => backdrop.style.display = "flex";
-    const closeModal = () => backdrop.style.display = "none";
+    const openModal = () => { backdrop.style.display = "flex"; };
+    const closeModal = () => { backdrop.style.display = "none"; };
 
     document.getElementById("btnSignup").addEventListener("click", () => {
       window.location.assign(PARABANK_REGISTER_URL);
@@ -74,18 +75,10 @@
     document.getElementById("btnClose").addEventListener("click", closeModal);
     backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeModal(); });
 
+    // Guidance-only: no webfuseSession calls, no postMessage, no errors.
     document.getElementById("btnShare").addEventListener("click", () => {
-  const msg = { type: "WF_START_SCREENSHARE" };
-
-  // Post to the Surfly container frame (where the extension is active)
-  try { window.top.postMessage(msg, "*"); } catch (e) {}
-  try { window.parent.postMessage(msg, "*"); } catch (e) {}
-
-  // Keep local post as well (harmless)
-  try { window.postMessage(msg, "*"); } catch (e) {}
-});
-
-
+      openModal();
+    });
   </script>
 </body>
 </html>
