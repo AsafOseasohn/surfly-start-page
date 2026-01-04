@@ -4,10 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>ParaBank – Assisted Start</title>
-
 <style>
   body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 40px; background:#fff; }
-
   .card { max-width: 560px; padding: 26px; border: 1px solid #ddd; border-radius: 14px; }
   h1 { font-size: 18px; margin: 0 0 10px; }
   p { margin: 0 0 14px; color: #333; line-height: 1.4; }
@@ -16,41 +14,17 @@
   .helper { margin-top: 10px; font-size: 12px; color: #666; }
   .badge { display:inline-block; font-size:12px; padding:2px 8px; border:1px solid #ddd; border-radius:999px; margin-left:8px; color:#444; }
 
-  /* overlay */
-  .overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.45);
-    display: none;
-    z-index: 999999;
-  }
-
-  .spotlight {
-    position: absolute;
-    border: 3px solid #3b82f6;
-    border-radius: 10px;
-    box-shadow: 0 0 0 9999px rgba(0,0,0,.45);
-    pointer-events: none;
-  }
-
-  .coach {
-    position: absolute;
-    width: min(420px, calc(100vw - 24px));
-    background: #fff;
-    border-radius: 14px;
-    border: 1px solid #ddd;
-    padding: 14px;
-    box-shadow: 0 12px 40px rgba(0,0,0,.25);
-  }
-  .coach h2 { margin: 0 0 8px; font-size: 15px; }
-  .coach p { margin: 0 0 12px; font-size: 13px; color: #333; }
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; z-index: 999999; }
+  .spotlight { position: absolute; border: 3px solid #3b82f6; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(0,0,0,.45); pointer-events: none; }
+  .coach { position: absolute; width: min(520px, calc(100vw - 24px)); background: #fff; border-radius: 14px; border: 1px solid #ddd; padding: 16px; box-shadow: 0 12px 40px rgba(0,0,0,.25); }
+  .coach h2 { margin: 0 0 8px; font-size: 18px; }
+  .coach p { margin: 0 0 12px; font-size: 14px; color: #333; }
   .coach .row { display: flex; gap: 10px; justify-content: flex-end; }
-  .coach button { padding: 10px 12px; border-radius: 10px; border: 1px solid #111; background: #111; color: #fff; cursor: pointer; font-size: 13px; }
+  .coach button { padding: 10px 14px; border-radius: 10px; border: 1px solid #111; background: #111; color: #fff; cursor: pointer; font-size: 14px; }
   .coach .ghost { background:#fff; color:#111; border:1px solid #bbb; }
   .tiny { font-size: 12px; color:#666; margin-top: 8px; }
 </style>
 </head>
-
 <body>
   <div class="card">
     <h1>ParaBank Assisted Signup <span class="badge">in-session start</span></h1>
@@ -58,7 +32,6 @@
 
     <button class="btn" id="btnSignup">Start signup</button>
     <button class="btn" id="btnShare">Continue with screen share</button>
-
     <div class="helper">We’ll guide you in 2 quick clicks.</div>
   </div>
 
@@ -77,10 +50,8 @@
 
 <script>
   const PARABANK_REGISTER_URL = "https://parabank.parasoft.com/parabank/register.htm";
-
-  // Persistence keys
-  const K_ACTIVE = "wfGuideActive";   // "1" if user started the guide
-  const K_STEP   = "wfGuideStep";     // "1" or "2"
+  const K_ACTIVE = "wfGuideActive";
+  const K_STEP = "wfGuideStep";
 
   const overlay = document.getElementById("overlay");
   const spotlight = document.getElementById("spotlight");
@@ -94,9 +65,34 @@
   let step = 0;
   let pollTimer = null;
 
-  // ---- DOM finders (reactive, no coords) ----
+  function showOverlay() {
+    overlay.style.display = "block";
+    overlay.setAttribute("aria-hidden", "false");
+  }
+  function hideOverlay() {
+    overlay.style.display = "none";
+    overlay.setAttribute("aria-hidden", "true");
+  }
+  function stopPolling() {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = null;
+  }
+  function startPolling(fn) {
+    stopPolling();
+    pollTimer = setInterval(fn, 200);
+  }
+
+  // IMPORTANT: reset spotlight so it never "sticks" to the wrong element
+  function clearSpotlight() {
+    spotlight.style.left = "-9999px";
+    spotlight.style.top = "-9999px";
+    spotlight.style.width = "10px";
+    spotlight.style.height = "10px";
+  }
+
+  // More reliable selector from your inspected element:
   function findPlus() {
-    return document.querySelector(".session-icon-button.tab-new");
+    return document.querySelector('button[data-t="new-tab-button"]');
   }
 
   function findShareVisible() {
@@ -107,12 +103,9 @@
     return el;
   }
 
-  // ---- Overlay positioning that survives transformed ancestors ----
-  // Key trick: translate element rect into overlay’s coordinate space.
   function highlight(el, padding = 10) {
     const r = el.getBoundingClientRect();
-    const base = overlay.getBoundingClientRect(); // if overlay is inside a transformed container, base won't be (0,0)
-
+    const base = overlay.getBoundingClientRect();
     const left = (r.left - base.left) - padding;
     const top  = (r.top  - base.top)  - padding;
 
@@ -125,39 +118,16 @@
   function placeCoachNear(el) {
     const r = el.getBoundingClientRect();
     const base = overlay.getBoundingClientRect();
-
-    // Place coach below the target, clamped into viewport of overlay container
     const desiredLeft = (r.left - base.left);
     const desiredTop  = (r.bottom - base.top) + 12;
 
-    const maxLeft = overlay.clientWidth - 440;
-    const maxTop  = overlay.clientHeight - 170;
+    const maxLeft = overlay.clientWidth - 540;
+    const maxTop  = overlay.clientHeight - 220;
 
     coach.style.left = Math.min(maxLeft, Math.max(12, desiredLeft)) + "px";
     coach.style.top  = Math.min(maxTop,  Math.max(12, desiredTop)) + "px";
   }
 
-  function showOverlay() {
-    overlay.style.display = "block";
-    overlay.setAttribute("aria-hidden", "false");
-  }
-
-  function hideOverlay() {
-    overlay.style.display = "none";
-    overlay.setAttribute("aria-hidden", "true");
-  }
-
-  function stopPolling() {
-    if (pollTimer) clearInterval(pollTimer);
-    pollTimer = null;
-  }
-
-  function startPolling(fn) {
-    stopPolling();
-    pollTimer = setInterval(fn, 200);
-  }
-
-  // ---- Steps ----
   function renderStep1() {
     step = 1;
     sessionStorage.setItem(K_STEP, "1");
@@ -168,6 +138,7 @@
     btnNext.textContent = "Next";
 
     showOverlay();
+    clearSpotlight();
 
     startPolling(() => {
       const plus = findPlus();
@@ -188,19 +159,13 @@
     btnNext.textContent = "Done";
 
     showOverlay();
+    clearSpotlight();
 
     startPolling(() => {
       const share = findShareVisible();
       if (share) {
         highlight(share, 14);
         placeCoachNear(share);
-      } else {
-        // If share isn't visible yet, keep nudging toward +
-        const plus = findPlus();
-        if (plus) {
-          highlight(plus, 12);
-          placeCoachNear(plus);
-        }
       }
     });
   }
@@ -211,17 +176,14 @@
     sessionStorage.removeItem(K_ACTIVE);
     sessionStorage.removeItem(K_STEP);
     hideOverlay();
-    spotlight.style.width = "0";
-    spotlight.style.height = "0";
+    clearSpotlight();
   }
 
-  // ---- Button wiring ----
   document.getElementById("btnSignup").addEventListener("click", () => {
     window.location.assign(PARABANK_REGISTER_URL);
   });
 
   document.getElementById("btnShare").addEventListener("click", () => {
-    // Only persist if user explicitly starts it
     sessionStorage.setItem(K_ACTIVE, "1");
     renderStep1();
   });
@@ -233,18 +195,15 @@
     else endGuide();
   });
 
-  // ---- Persistence across tabs ----
-  // Only resume if user explicitly started the guide in THIS browser session.
+  // Resume only if the user started it
   (function maybeResume() {
     const active = sessionStorage.getItem(K_ACTIVE);
     const savedStep = sessionStorage.getItem(K_STEP);
-
-    if (active !== "1") return; // prevents auto-start on fresh sessions
+    if (active !== "1") return;
     if (savedStep === "1") renderStep1();
     if (savedStep === "2") renderStep2();
   })();
 
-  // Keep aligned on resize
   window.addEventListener("resize", () => {
     if (overlay.style.display === "block") {
       if (step === 1) renderStep1();
